@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Binary string generator – custom alphabet</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #111;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: monospace;
+            padding: 1rem;
+        }
+
+        .widget {
+            background: #000;
+            border: 1px solid #333;
+            border-radius: 4px;
+            width: 100%;
+            max-width: 900px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1px;
+        }
+
+        .controls-col {
+            background: #0a0a0a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 1.5rem 1rem;
+            gap: 1.2rem;
+        }
+
+        .row {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.4rem;
+            width: 100%;
+        }
+
+        .row-horizontal {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            gap: 1.5rem;
+            width: 100%;
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .input-group label {
+            font-size: 0.85rem;
+            font-weight: bold;
+            color: #aaa;
+            letter-spacing: 0.03em;
+        }
+
+        .input-group input {
+            background: #000;
+            border: 1px solid #444;
+            color: #0f0;
+            font-family: monospace;
+            font-size: 1rem;
+            padding: 0.4rem 0.6rem;
+            width: 100px;
+            text-align: center;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-group input:focus {
+            border-color: #0f0;
+        }
+
+        #targetWord1 {
+            color: #ffa500;
+        }
+        #targetWord2 {
+            color: #4da6ff;
+        }
+
+        .stats-row {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.2rem;
+            color: #aaa;
+            font-family: monospace;
+            font-size: 0.85rem;
+            text-align: center;
+            padding: 0.3rem 0;
+        }
+
+        .stats-row .stat-value {
+            color: #ddd;
+            font-weight: bold;
+        }
+
+        .buttons-row {
+            display: flex;
+            flex-direction: row;
+            gap: 1rem;
+            justify-content: center;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            color: #ccc;
+            font-family: monospace;
+            font-size: 0.8rem;
+            font-weight: bold;
+            letter-spacing: 0.05em;
+            padding: 0.4rem 1rem;
+            cursor: pointer;
+            transition: background 0.2s, border-color 0.2s, color 0.2s;
+        }
+
+        .btn:hover {
+            background: #333;
+            border-color: #666;
+            color: #fff;
+        }
+
+        .btn:active {
+            background: #000;
+        }
+
+        .btn-start-stop {
+            min-width: 70px;
+        }
+
+        .display-col {
+            background: #000;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .display-area {
+            height: calc(1.6rem * 16);
+            overflow: auto;
+            background: #000;
+            border: 1px solid #555;
+            box-sizing: border-box;
+        }
+
+        .lines {
+            display: inline-block;
+            min-width: 100%;
+            text-align: right;
+            white-space: pre;
+            color: #0f0;
+            font-size: 1rem;
+            line-height: 1.6;
+            padding: 0.75rem;
+            font-family: monospace;
+        }
+
+        .lines .completed-orange {
+            color: #ffa500;
+        }
+        .lines .completed-blue {
+            color: #4da6ff;
+        }
+
+        .display-area::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .display-area::-webkit-scrollbar-track {
+            background: #111;
+        }
+        .display-area::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="widget">
+        <div class="controls-col">
+            <div class="row">
+                <div class="input-group">
+                    <label for="alphabetInput">Alphabet</label>
+                    <input type="text" id="alphabetInput" value="01" placeholder="01" autocomplete="off" spellcheck="false" maxlength="64">
+                </div>
+            </div>
+
+            <div class="row-horizontal">
+                <div class="input-group">
+                    <label for="targetWord1">Word 1</label>
+                    <input type="text" id="targetWord1" value="101" placeholder="101" autocomplete="off" spellcheck="false" maxlength="32" style="font-size: 1.2rem;">
+                </div>
+                <div class="input-group">
+                    <label for="targetWord2">Word 2</label>
+                    <input type="text" id="targetWord2" value="010" placeholder="010" autocomplete="off" spellcheck="false" maxlength="32" style="font-size: 1.2rem;">
+                </div>
+            </div>
+
+            <div class="stats-row">
+                <span>1 vs 2 = <span class="stat-value" id="statCount1">0</span> : <span class="stat-value" id="statCount2">0</span> = <span class="stat-value" id="statRatio">0.0000</span></span>
+            </div>
+
+            <div class="buttons-row">
+                <button class="btn btn-start-stop" id="btnStartStop">Stop</button>
+                <button class="btn" id="btnReset">Reset</button>
+                <button class="btn" id="btnSpeed">Speed: 1x</button>
+            </div>
+        </div>
+
+        <div class="display-col">
+            <div class="display-area" id="display">
+                <div class="lines" id="linesContent"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const displayContainer = document.getElementById('display');
+            const linesDiv = document.getElementById('linesContent');
+            const alphabetInput = document.getElementById('alphabetInput');
+            const input1 = document.getElementById('targetWord1');
+            const input2 = document.getElementById('targetWord2');
+            const statCount1 = document.getElementById('statCount1');
+            const statCount2 = document.getElementById('statCount2');
+            const statRatio = document.getElementById('statRatio');
+            const btnStartStop = document.getElementById('btnStartStop');
+            const btnReset = document.getElementById('btnReset');
+            const btnSpeed = document.getElementById('btnSpeed');
+
+            let alphabet = alphabetInput.value || '01';   // initial value, but can become empty later
+            let targetWord1 = input1.value.trim() || '101';
+            let targetWord2 = input2.value.trim() || '010';
+            let completedLines = [];
+            let currentString = '';
+            let intervalId = null;
+            let matchCount1 = 0;
+            let matchCount2 = 0;
+            let isRunning = false;
+            let currentSpeed = 100;
+
+            let userAtRightEdge = true;
+            let userAtBottom = true;
+
+            function updateScrollFlags() {
+                const threshold = 2;
+                const maxSL = displayContainer.scrollWidth - displayContainer.clientWidth;
+                userAtRightEdge = maxSL <= 0 ||
+                    (displayContainer.scrollLeft + displayContainer.clientWidth >= displayContainer.scrollWidth - threshold);
+
+                const maxST = displayContainer.scrollHeight - displayContainer.clientHeight;
+                userAtBottom = maxST <= 0 ||
+                    (displayContainer.scrollTop + displayContainer.clientHeight >= displayContainer.scrollHeight - threshold);
+            }
+
+            displayContainer.addEventListener('scroll', updateScrollFlags, { passive: true });
+
+            function updateStats() {
+                statCount1.textContent = matchCount1;
+                statCount2.textContent = matchCount2;
+
+                if (matchCount2 === 0) {
+                    if (matchCount1 === 0) {
+                        statRatio.textContent = '0.0000';
+                    } else {
+                        statRatio.textContent = 'Infinity';
+                    }
+                } else {
+                    const ratio = matchCount1 / matchCount2;
+                    statRatio.textContent = ratio.toFixed(4);
+                }
+            }
+
+            function renderDisplay() {
+                const parts = [];
+                for (const line of completedLines) {
+                    parts.push(`<span class="${line.colorClass}">${line.text}</span>`);
+                }
+                if (currentString.length > 0) {
+                    parts.push(currentString);
+                }
+                linesDiv.innerHTML = parts.join('\n');
+
+                if (userAtRightEdge) {
+                    displayContainer.scrollLeft = displayContainer.scrollWidth;
+                }
+                if (userAtBottom) {
+                    displayContainer.scrollTop = displayContainer.scrollHeight;
+                }
+            }
+
+            function getRandomChar() {
+                if (alphabet.length === 0) return null;   // empty alphabet → no char
+                return alphabet[Math.floor(Math.random() * alphabet.length)];
+            }
+
+            function tick() {
+                // If alphabet is empty, do nothing (generation paused)
+                if (alphabet.length === 0) return;
+
+                const char = getRandomChar();
+                if (char === null) return;   // safety
+
+                currentString += char;
+
+                let matched = false;
+                if (targetWord1.length > 0 && currentString.endsWith(targetWord1)) {
+                    completedLines.push({ text: currentString, colorClass: 'completed-orange' });
+                    currentString = '';
+                    matchCount1++;
+                    matched = true;
+                }
+                if (!matched && targetWord2.length > 0 && currentString.endsWith(targetWord2)) {
+                    completedLines.push({ text: currentString, colorClass: 'completed-blue' });
+                    currentString = '';
+                    matchCount2++;
+                }
+
+                updateStats();
+                renderDisplay();
+            }
+
+            function startInterval(delay) {
+                if (intervalId) clearInterval(intervalId);
+                intervalId = setInterval(tick, delay);
+            }
+
+            function stopInterval() {
+                if (intervalId) {
+                    clearInterval(intervalId);
+                    intervalId = null;
+                }
+            }
+
+            function restartGeneratorWithCurrentSpeed() {
+                if (isRunning) {
+                    stopInterval();
+                    startInterval(currentSpeed);
+                }
+            }
+
+            function startGenerator() {
+                if (intervalId) return;
+                startInterval(currentSpeed);
+                isRunning = true;
+                btnStartStop.textContent = 'Stop';
+            }
+
+            function stopGenerator() {
+                stopInterval();
+                isRunning = false;
+                btnStartStop.textContent = 'Start';
+            }
+
+            function toggleGenerator() {
+                if (isRunning) {
+                    stopGenerator();
+                } else {
+                    startGenerator();
+                }
+            }
+
+            function toggleSpeed() {
+                if (currentSpeed === 100) {
+                    currentSpeed = 50;
+                    btnSpeed.textContent = 'Speed: 2x';
+                } else if (currentSpeed === 50) {
+                    currentSpeed = 20;
+                    btnSpeed.textContent = 'Speed: 5x';
+                } else {
+                    currentSpeed = 100;
+                    btnSpeed.textContent = 'Speed: 1x';
+                }
+                if (isRunning) {
+                    restartGeneratorWithCurrentSpeed();
+                }
+            }
+
+            function resetAll() {
+                stopGenerator();
+                completedLines = [];
+                currentString = '';
+                matchCount1 = 0;
+                matchCount2 = 0;
+                updateStats();
+                renderDisplay();
+                displayContainer.scrollLeft = 0;
+                displayContainer.scrollTop = 0;
+                userAtRightEdge = true;
+                userAtBottom = true;
+            }
+
+            btnStartStop.addEventListener('click', toggleGenerator);
+            btnReset.addEventListener('click', resetAll);
+            btnSpeed.addEventListener('click', toggleSpeed);
+
+            // ── Updated alphabet handling (allows empty) ─────
+            function updateAlphabet() {
+                alphabet = alphabetInput.value;   // keep whatever is typed, even empty
+            }
+
+            alphabetInput.addEventListener('input', updateAlphabet);
+            // Blur no longer forces a default value — you can leave it empty
+            alphabetInput.addEventListener('blur', () => {
+                alphabet = alphabetInput.value;   // just sync
+            });
+
+            function updateTarget1() {
+                targetWord1 = input1.value.trim();
+            }
+
+            function updateTarget2() {
+                targetWord2 = input2.value.trim();
+            }
+
+            input1.addEventListener('input', updateTarget1);
+            input2.addEventListener('input', updateTarget2);
+
+            // Init
+            updateAlphabet();
+            updateTarget1();
+            updateTarget2();
+            updateScrollFlags();
+            updateStats();
+            renderDisplay();
+            startGenerator();   // auto-start
+
+            window.addEventListener('beforeunload', stopGenerator);
+        })();
+    </script>
+</body>
+</html>
