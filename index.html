@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Binary string generator – custom alphabet</title>
+    <title>Penney's Game</title>
     <style>
         * {
             margin: 0;
@@ -201,30 +201,33 @@
         <div class="controls-col">
             <div class="row">
                 <div class="input-group">
-                    <label for="alphabetInput">Alphabet</label>
+                    <label for="alphabetInput" data-i18n="alphabet">Alphabet</label>
                     <input type="text" id="alphabetInput" value="01" placeholder="01" autocomplete="off" spellcheck="false" maxlength="64">
                 </div>
             </div>
 
             <div class="row-horizontal">
                 <div class="input-group">
-                    <label for="targetWord1">Word 1</label>
+                    <label for="targetWord1" data-i18n="word1">Word 1</label>
                     <input type="text" id="targetWord1" value="101" placeholder="101" autocomplete="off" spellcheck="false" maxlength="32" style="font-size: 1.2rem;">
                 </div>
                 <div class="input-group">
-                    <label for="targetWord2">Word 2</label>
-                    <input type="text" id="targetWord2" value="010" placeholder="010" autocomplete="off" spellcheck="false" maxlength="32" style="font-size: 1.2rem;">
+                    <label for="targetWord2" data-i18n="word2">Word 2</label>
+                    <input type="text" id="targetWord2" value="110" placeholder="010" autocomplete="off" spellcheck="false" maxlength="32" style="font-size: 1.2rem;">
                 </div>
             </div>
 
             <div class="stats-row">
-                <span>1 vs 2 = <span class="stat-value" id="statCount1">0</span> : <span class="stat-value" id="statCount2">0</span> = <span class="stat-value" id="statRatio">0.0000</span></span>
+                <span><span data-i18n="vs">1 vs 2</span> = <span class="stat-value" id="statCount1">0</span> : <span class="stat-value" id="statCount2">0</span> = <span class="stat-value" id="statRatio">0.0000</span></span>
+            </div>
+            <div class="stats-row">
+                <span><span data-i18n="expectation">Expectation</span>  ⟶   <span id="expectedOdds">-</span></span>
             </div>
 
             <div class="buttons-row">
-                <button class="btn btn-start-stop" id="btnStartStop">Stop</button>
-                <button class="btn" id="btnReset">Reset</button>
-                <button class="btn" id="btnSpeed">Speed: 1x</button>
+                <button class="btn btn-start-stop" id="btnStartStop" data-i18n="stop">Stop</button>
+                <button class="btn" id="btnReset" data-i18n="reset">Reset</button>
+                <button class="btn" id="btnSpeed" data-i18n="speed1x">Speed: 1x</button>
             </div>
         </div>
 
@@ -245,20 +248,58 @@
             const statCount1 = document.getElementById('statCount1');
             const statCount2 = document.getElementById('statCount2');
             const statRatio = document.getElementById('statRatio');
+            const expectedOdds = document.getElementById('expectedOdds');
             const btnStartStop = document.getElementById('btnStartStop');
             const btnReset = document.getElementById('btnReset');
             const btnSpeed = document.getElementById('btnSpeed');
 
-            let alphabet = alphabetInput.value || '01';   // initial value, but can become empty later
+            const language = navigator.languages[0] ?? navigator.language ?? "en";
+            const lang = language.substr(0, 2).toLowerCase();
+            const langIndex = lang === "ru" ? 1 : 0;
+            const translation = {
+                // first: in default lang (en), second: in russian
+                title: ["Penney's Game", "Игра Пенни"],
+                alphabet: ["Alphabet", "Алфавит"],
+                word1: ["Word 1", "Слово 1"],
+                word2: ["Word 2", "Слово 2"],
+                vs: ["Which is earlier, word 1 vs word 2", "Какое раньше, слово 1 vs слово 2"],
+                expectation: ["Expectation", "Ожидание"],
+                start: ["Start", "Старт"],
+                stop: ["Stop", "Стоп"],
+                reset: ["Reset", "Сброс"],
+                speed1x: ["Speed: 1x", "Скорость: 1x"],
+                speed2x: ["Speed: 2x", "Скорость: 2x"],
+                speed5x: ["Speed: 5x", "Скорость: 5x"],
+                speed10x: ["Speed: 10x", "Скорость: 10x"],
+                speed50x: ["Speed: 50x", "Скорость: 50x"],
+                speed100x: ["Speed: 100x", "Скорость: 100x"],
+            };
+            function tl(key) {
+                const tls = translation[key];
+                if (tls && tls.length > 0)
+                    return tls[langIndex] ?? tls[0];
+                else
+                    return null
+            }
+            document.title = tl("title");
+            document.documentElement.lang = lang === "ru" ? "ru" : "en";
+            document.querySelectorAll("[data-i18n]").forEach(element => {
+                const t = tl(element.dataset.i18n);
+                if (t) {
+                    element.innerText = t;
+                }
+            });
+
+            let alphabet = alphabetInput.value.trim() || '01';   // initial value, but can become empty later
             let targetWord1 = input1.value.trim() || '101';
-            let targetWord2 = input2.value.trim() || '010';
+            let targetWord2 = input2.value.trim() || '110';
             let completedLines = [];
             let currentString = '';
             let intervalId = null;
             let matchCount1 = 0;
             let matchCount2 = 0;
             let isRunning = false;
-            let currentSpeed = 100;
+            let currentSpeed = 500;
 
             let userAtRightEdge = true;
             let userAtBottom = true;
@@ -284,7 +325,7 @@
                     if (matchCount1 === 0) {
                         statRatio.textContent = '0.0000';
                     } else {
-                        statRatio.textContent = 'Infinity';
+                        statRatio.textContent = '∞';
                     }
                 } else {
                     const ratio = matchCount1 / matchCount2;
@@ -364,13 +405,13 @@
                 if (intervalId) return;
                 startInterval(currentSpeed);
                 isRunning = true;
-                btnStartStop.textContent = 'Stop';
+                btnStartStop.textContent = tl("stop");
             }
 
             function stopGenerator() {
                 stopInterval();
                 isRunning = false;
-                btnStartStop.textContent = 'Start';
+                btnStartStop.textContent = tl("start");
             }
 
             function toggleGenerator() {
@@ -382,15 +423,15 @@
             }
 
             function toggleSpeed() {
-                if (currentSpeed === 100) {
-                    currentSpeed = 50;
-                    btnSpeed.textContent = 'Speed: 2x';
-                } else if (currentSpeed === 50) {
-                    currentSpeed = 20;
-                    btnSpeed.textContent = 'Speed: 5x';
-                } else {
+                if (currentSpeed === 500) {
                     currentSpeed = 100;
-                    btnSpeed.textContent = 'Speed: 1x';
+                    btnSpeed.textContent = tl("speed5x");
+                } else if (currentSpeed === 100) {
+                    currentSpeed = 10;
+                    btnSpeed.textContent = tl("speed50x");
+                } else {
+                    currentSpeed = 500;
+                    btnSpeed.textContent = tl("speed1x");
                 }
                 if (isRunning) {
                     restartGeneratorWithCurrentSpeed();
@@ -415,9 +456,27 @@
             btnReset.addEventListener('click', resetAll);
             btnSpeed.addEventListener('click', toggleSpeed);
 
+            function correlation(a, b, q) {
+                let result = 0;
+                for (let r = 1; r <= a.length; r++) {
+                    const k = a.slice(-r) === b.slice(0, r);
+                    result += k * (q ** (r-1));
+                }
+                return result;
+            }
+
+            function calculatePrediction() {
+                const q = alphabet.length;
+                const a = targetWord1;
+                const b = targetWord2;
+                const odds1 = (correlation(b, b, q) - correlation(b, a, q))/(correlation(a, a, q) - correlation(a, b, q));
+                expectedOdds.innerText = odds1.toFixed(6);
+            }
+
             // ── Updated alphabet handling (allows empty) ─────
             function updateAlphabet() {
-                alphabet = alphabetInput.value;   // keep whatever is typed, even empty
+                alphabet = alphabetInput.value.trim();   // keep whatever is typed, even empty
+                calculatePrediction();
             }
 
             alphabetInput.addEventListener('input', updateAlphabet);
@@ -428,10 +487,12 @@
 
             function updateTarget1() {
                 targetWord1 = input1.value.trim();
+                calculatePrediction();
             }
 
             function updateTarget2() {
                 targetWord2 = input2.value.trim();
+                calculatePrediction();
             }
 
             input1.addEventListener('input', updateTarget1);
@@ -443,6 +504,7 @@
             updateTarget2();
             updateScrollFlags();
             updateStats();
+            calculatePrediction();
             renderDisplay();
             startGenerator();   // auto-start
 
