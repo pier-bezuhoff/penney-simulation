@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Penney's Game</title>
     <style>
+        :root {
+            --color1: #ffa500;
+            --color2: #4da6ff;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -90,10 +95,10 @@
         }
 
         #targetWord1 {
-            color: #ffa500;
+            color: var(--color1);
         }
         #targetWord2 {
-            color: #4da6ff;
+            color: var(--color2);
         }
 
         .stats-row {
@@ -106,11 +111,18 @@
             font-size: 0.85rem;
             text-align: center;
             padding: 0.3rem 0;
-        }
 
-        .stats-row .stat-value {
-            color: #ddd;
-            font-weight: bold;
+            .stat-value {
+                color: #ddd;
+                font-weight: bold;
+            }
+
+            .stat-value#statCount1 {
+                color: var(--color1);
+            }
+            .stat-value#statCount2 {
+                color: var(--color2);
+            }
         }
 
         .buttons-row {
@@ -174,13 +186,13 @@
             line-height: 1.6;
             padding: 0.75rem;
             font-family: monospace;
-        }
 
-        .lines .completed-orange {
-            color: #ffa500;
-        }
-        .lines .completed-blue {
-            color: #4da6ff;
+            .completed-orange {
+                color: var(--color1);
+            }
+            .completed-blue {
+                color: var(--color2);
+            }
         }
 
         .display-area::-webkit-scrollbar {
@@ -256,7 +268,7 @@
             const language = navigator.languages[0] ?? navigator.language ?? "en";
             const lang = language.substr(0, 2).toLowerCase();
             const langIndex = lang === "ru" ? 1 : 0;
-            const translation = {
+            const translations = {
                 // first: in default lang (en), second: in russian
                 title: ["Penney's Game", "Игра Пенни"],
                 alphabet: ["Alphabet", "Алфавит"],
@@ -274,17 +286,14 @@
                 speed50x: ["Speed: 50x", "Скорость: 50x"],
                 speed100x: ["Speed: 100x", "Скорость: 100x"],
             };
-            function tl(key) {
-                const tls = translation[key];
-                if (tls && tls.length > 0)
-                    return tls[langIndex] ?? tls[0];
-                else
-                    return null
-            }
-            document.title = tl("title");
+            // localized strings { key: string_in_lang }
+            let strings = Object.fromEntries(
+                Object.entries(translations).map(([key, tls]) => [key, tls[langIndex] ?? tls[0] ?? null])
+            );
+            document.title = strings.title;
             document.documentElement.lang = lang === "ru" ? "ru" : "en";
             document.querySelectorAll("[data-i18n]").forEach(element => {
-                const t = tl(element.dataset.i18n);
+                const t = strings[element.dataset.i18n];
                 if (t) {
                     element.innerText = t;
                 }
@@ -405,13 +414,13 @@
                 if (intervalId) return;
                 startInterval(currentSpeed);
                 isRunning = true;
-                btnStartStop.textContent = tl("stop");
+                btnStartStop.textContent = strings.stop;
             }
 
             function stopGenerator() {
                 stopInterval();
                 isRunning = false;
-                btnStartStop.textContent = tl("start");
+                btnStartStop.textContent = strings.start;
             }
 
             function toggleGenerator() {
@@ -425,13 +434,13 @@
             function toggleSpeed() {
                 if (currentSpeed === 500) {
                     currentSpeed = 100;
-                    btnSpeed.textContent = tl("speed5x");
+                    btnSpeed.textContent = strings.speed5x;
                 } else if (currentSpeed === 100) {
                     currentSpeed = 10;
-                    btnSpeed.textContent = tl("speed50x");
+                    btnSpeed.textContent = strings.speed50x;
                 } else {
                     currentSpeed = 500;
-                    btnSpeed.textContent = tl("speed1x");
+                    btnSpeed.textContent = strings.speed1x;
                 }
                 if (isRunning) {
                     restartGeneratorWithCurrentSpeed();
